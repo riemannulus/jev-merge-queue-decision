@@ -1,0 +1,17 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "rebase_before_merge_queue": {
+      "type": "noul",
+      "noul": 0.01
+    },
+    "full_test_matrix_required": {
+      "type": "noul",
+      "noul": 0.01
+    }
+  },
+  "usage": {
+    "input_tokens": 123,
+    "output_tokens": 10
+  }
+}
