@@ -59,6 +59,21 @@ test('blocks instead of skipping when there is no fixture or TypeSafe API key', 
   assert.equal(assessment.fullTest.status, 'BLOCKED');
 });
 
+test('redacts an API key from JSON diagnostics when header construction fails', (t) => {
+  const repo = createRepository(t);
+  commitFile(repo, 'docs/readme.md', 'narrow change');
+  const apiKey = 'SYNTHETIC_SECRET\nEXTRA';
+
+  const result = runCli(['--repo', repo, '--base', 'develop', '--json'], {
+    TYPESAFE_API_KEY: apiKey,
+  });
+
+  assert.equal(result.status, 1);
+  assert.doesNotMatch(result.stdout, /SYNTHETIC_SECRET/);
+  const assessment = JSON.parse(result.stdout);
+  assert.match(assessment.diagnostics[0], /Jev evaluation unavailable/);
+});
+
 function runCli(args, environment = {}) {
   return spawnSync(process.execPath, [cliPath, ...args], {
     encoding: 'utf8',

@@ -158,5 +158,10 @@ function blockedAssessment(reason) {
 }
 
 function safeMessage(error) {
-  return error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
+  const apiKey = process.env.TYPESAFE_API_KEY;
+  const withoutApiKey = apiKey ? message.split(apiKey).join('[REDACTED]') : message;
+  return withoutApiKey
+    .replace(/Bearer\s+[^\s"']+/giu, 'Bearer [REDACTED]')
+    .replace(/(https?:\/\/)[^/\s@]+@/giu, '$1[REDACTED]@');
 }

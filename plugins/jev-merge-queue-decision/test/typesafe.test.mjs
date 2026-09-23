@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseNoulAnswers } from '../lib/typesafe.mjs';
+import { evaluateWithJev, parseNoulAnswers } from '../lib/typesafe.mjs';
 
 test('rejects a malformed TypeSafe response instead of manufacturing a low-risk answer', () => {
   assert.throws(
@@ -22,4 +22,18 @@ test('returns the two named Noul values from a valid TypeSafe response', () => {
     rebase_before_merge_queue: 0.81,
     full_test_matrix_required: 0.19,
   });
+});
+
+test('returns a bounded timeout error when TypeSafe stalls', async () => {
+  await assert.rejects(
+    evaluateWithJev({
+      state: { changedPaths: [] },
+      apiKey: 'test-key',
+      timeoutMs: 1,
+      fetchImpl: (_url, { signal }) => new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new Error('request aborted')));
+      }),
+    }),
+    /timed out/,
+  );
 });

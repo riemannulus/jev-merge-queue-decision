@@ -80,7 +80,8 @@ and environment files.
 ## Verify
 
 ```bash
-python3 /Users/lago/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py \
+# The Plugin Creator validator requires PyYAML in the Python environment.
+python3 /path/to/plugin-creator/scripts/validate_plugin.py \
   plugins/jev-merge-queue-decision
 node --test plugins/jev-merge-queue-decision/test/*.test.mjs test/package-plugin.test.mjs
 ```

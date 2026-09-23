@@ -21,6 +21,10 @@ function routeRebase(facts, answer, thresholds) {
     return deterministic('NOT_REQUIRED', 'The branch already includes every commit from the base ref.');
   }
 
+  if (facts.virtualMergeAvailable === false) {
+    return blocked('Virtual merge evidence is unavailable for a branch that is behind the base ref.');
+  }
+
   if (facts.hasConflicts) {
     return deterministic('REQUIRED', 'A virtual merge with the base ref reports conflicts.');
   }

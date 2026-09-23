@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,10 +28,16 @@ const archive = join(distDirectory, `jev-merge-queue-decision-${packageMetadata.
 
 try {
   await mkdir(stagingPackage);
-  await Promise.all(stagedEntries.map(async (entry) => {
+  const files = trackedRuntimeFiles();
+  await Promise.all(files.map(async (entry) => {
     const source = checkedPath(pluginRoot, entry);
     const destination = checkedPath(stagingPackage, entry);
-    await cp(source, destination, { errorOnExist: true, recursive: true });
+    const metadata = await lstat(source);
+    if (metadata.isSymbolicLink()) {
+      throw new Error(`Refusing to package symbolic link: ${entry}`);
+    }
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(source, destination, 0);
   }));
   await mkdir(distDirectory, { recursive: true });
 
@@ -54,4 +60,36 @@ function checkedPath(root, entry) {
   }
 
   return path;
+}
+
+function trackedRuntimeFiles() {
+  const result = spawnSync('git', ['ls-files', '-z', '--', 'plugins/jev-merge-queue-decision'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`git ls-files failed: ${result.stderr}`);
+
+  const prefix = 'plugins/jev-merge-queue-decision/';
+  const files = result.stdout
+    .split('\0')
+    .filter(Boolean)
+    .map((path) => path.slice(prefix.length))
+    .filter(isStagedEntry);
+
+  if (files.length === 0) {
+    throw new Error('No tracked runtime files found for the plugin.');
+  }
+
+  for (const path of files) {
+    if (/(?:^|\/)\.env(?:\.|$)/u.test(path)) {
+      throw new Error(`Refusing to package environment file: ${path}`);
+    }
+  }
+
+  return files;
+}
+
+function isStagedEntry(path) {
+  return stagedEntries.some((entry) => path === entry || path.startsWith(`${entry}/`));
 }

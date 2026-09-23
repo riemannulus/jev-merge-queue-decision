@@ -49,6 +49,24 @@ test('does not require a rebase when the branch includes the base', () => {
   assert.equal(result.rebase.source, 'deterministic');
 });
 
+test('blocks a rebase skip when virtual merge evidence is unavailable for a behind branch', () => {
+  const result = routeAssessment({
+    facts: {
+      baseResolved: true,
+      behind: 1,
+      hasConflicts: false,
+      highBlastRadiusPaths: [],
+      virtualMergeAvailable: false,
+    },
+    answers: {
+      rebase_before_merge_queue: 0.01,
+      full_test_matrix_required: 0.01,
+    },
+  });
+
+  assert.equal(result.rebase.status, 'BLOCKED');
+});
+
 test('routes Noul values in the uncertainty band to human review', () => {
   const result = routeAssessment({
     facts: {

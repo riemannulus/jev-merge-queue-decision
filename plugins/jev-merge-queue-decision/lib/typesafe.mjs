@@ -10,23 +10,38 @@ export class TypeSafeResponseError extends Error {
   }
 }
 
-export async function evaluateWithJev({ state, apiKey, fetchImpl = fetch }) {
+export async function evaluateWithJev({ state, apiKey, fetchImpl = fetch, timeoutMs = 15_000 }) {
   if (!apiKey) {
     throw new TypeSafeResponseError('TYPESAFE_API_KEY is required unless --response-file is supplied.');
   }
 
-  const response = await fetchImpl('https://api.typesafe.ai/v1/systemone', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'jev-latest',
-      state,
-      questions: questions(),
-    }),
-  });
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) {
+    throw new TypeSafeResponseError('TypeSafe timeout must be a positive integer in milliseconds.');
+  }
+
+  const signal = AbortSignal.timeout(timeoutMs);
+  let response;
+  try {
+    response = await fetchImpl('https://api.typesafe.ai/v1/systemone', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'jev-latest',
+        state,
+        questions: questions(),
+      }),
+      signal,
+    });
+  } catch {
+    if (signal.aborted) {
+      throw new TypeSafeResponseError(`TypeSafe request timed out after ${timeoutMs}ms.`);
+    }
+
+    throw new TypeSafeResponseError('TypeSafe request failed before receiving a response.');
+  }
 
   if (!response.ok) {
     throw new TypeSafeResponseError(`TypeSafe returned HTTP ${response.status}.`);

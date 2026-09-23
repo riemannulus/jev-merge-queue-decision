@@ -31,9 +31,10 @@ export function collectGitEvidence({
   const head = runGit(repo, ['rev-parse', '--verify', 'HEAD']).trim();
   const mergeBase = runGit(repo, ['merge-base', 'HEAD', base]).trim();
   const [ahead, behind] = parseAheadBehind(runGit(repo, ['rev-list', '--left-right', '--count', `HEAD...${base}`]));
-  const allChangedPaths = parseNulPaths(runGit(repo, ['diff', '--name-only', '-z', `${mergeBase}..HEAD`]));
+  const allChangedPaths = parseNulPaths(runGit(repo, ['diff', '--name-only', '--no-renames', '-z', `${mergeBase}..HEAD`]));
   const allDiffStatLines = parseLines(runGit(repo, ['diff', '--stat', '--no-renames', `${mergeBase}..HEAD`]));
   const virtualMerge = runGitResult(repo, ['merge-tree', '--write-tree', 'HEAD', base]);
+  const allHighBlastRadiusPaths = allChangedPaths.filter(isHighBlastRadiusPath);
 
   return {
     base,
@@ -46,7 +47,9 @@ export function collectGitEvidence({
     freshness,
     hasConflicts: virtualMerge.status === 1,
     head,
-    highBlastRadiusPaths: allChangedPaths.filter(isHighBlastRadiusPath),
+    highBlastRadiusPathCount: allHighBlastRadiusPaths.length,
+    highBlastRadiusPaths: allHighBlastRadiusPaths.slice(0, maxChangedPaths),
+    highBlastRadiusPathsTruncated: allHighBlastRadiusPaths.length > maxChangedPaths,
     mergeBase,
     virtualMergeAvailable: virtualMerge.status === 0 || virtualMerge.status === 1,
     ahead,
@@ -64,18 +67,31 @@ function unresolvedBaseEvidence(base, freshness) {
     diffStatTruncated: false,
     freshness,
     hasConflicts: false,
+    highBlastRadiusPathCount: 0,
     highBlastRadiusPaths: [],
+    highBlastRadiusPathsTruncated: false,
     virtualMergeAvailable: false,
   };
 }
 
 function refreshBase(repo, base) {
   const match = /^origin\/(.+)$/u.exec(base);
-  if (!match) {
+  const branch = match?.[1];
+  if (!branch || branch.startsWith('-') || branch.includes(':') || !isValidBranchName(repo, branch)) {
     throw new Error('--refresh requires a base ref in the form origin/<branch>.');
   }
 
-  runGit(repo, ['fetch', '--quiet', 'origin', match[1]]);
+  runGit(repo, [
+    'fetch',
+    '--quiet',
+    '--no-tags',
+    'origin',
+    `+refs/heads/${branch}:refs/remotes/origin/${branch}`,
+  ]);
+}
+
+function isValidBranchName(repo, branch) {
+  return runGitResult(repo, ['check-ref-format', '--branch', branch]).status === 0;
 }
 
 function parseAheadBehind(output) {
