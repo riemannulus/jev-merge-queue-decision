@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jev-merge-queue-decision",
+  "version": "0.1.0",
+  "description": "Jev-assisted, evidence-backed merge-queue decisions for rebase and full-test requirements.",
+  "author": {
+    "name": "riemannulus",
+    "url": "https://github.com/riemannulus"
+  },
+  "homepage": "https://github.com/riemannulus/jev-merge-queue-decision",
+  "repository": "https://github.com/riemannulus/jev-merge-queue-decision",
+  "license": "MIT",
+  "keywords": [
+    "typesafe",
+    "jev",
+    "merge-queue",
+    "git",
+    "testing"
+  ]
+}

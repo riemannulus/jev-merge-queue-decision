@@ -1,0 +1,36 @@
+{
+  "name": "jev-merge-queue-decision",
+  "version": "0.1.0",
+  "description": "Jev-assisted, evidence-backed merge-queue decisions for rebase and full-test requirements.",
+  "author": {
+    "name": "riemannulus",
+    "url": "https://github.com/riemannulus"
+  },
+  "homepage": "https://github.com/riemannulus/jev-merge-queue-decision",
+  "repository": "https://github.com/riemannulus/jev-merge-queue-decision",
+  "license": "MIT",
+  "keywords": [
+    "typesafe",
+    "jev",
+    "merge-queue",
+    "git",
+    "testing"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Jev Merge Queue Decision",
+    "shortDescription": "Decide whether to rebase and run the full test matrix.",
+    "longDescription": "Collect Git facts and use TypeSafe Jev to make auditable merge-queue decisions without modifying the target repository.",
+    "developerName": "riemannulus",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/riemannulus/jev-merge-queue-decision",
+    "defaultPrompt": [
+      "Decide whether my branch needs a develop rebase before merge queue admission.",
+      "Determine whether this branch needs the full test matrix or focused checks."
+    ],
+    "brandColor": "#4338CA"
+  }
+}
